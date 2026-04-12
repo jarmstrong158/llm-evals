@@ -1,0 +1,82 @@
+[
+  {
+    "id": "case-001",
+    "input": "https://job-boards.greenhouse.io/komodohealth/jobs/8447511002",
+    "expected": "valid",
+    "tags": ["url", "greenhouse"],
+    "notes": "Real Komodo Health Greenhouse URL",
+    "added_at": "2026-04-12T00:00:00+00:00"
+  },
+  {
+    "id": "case-002",
+    "input": "https://jobs.lever.co/anthropic/abc123",
+    "expected": "valid",
+    "tags": ["url", "lever"],
+    "notes": "Lever direct job URL",
+    "added_at": "2026-04-12T00:00:00+00:00"
+  },
+  {
+    "id": "case-003",
+    "input": "https://www.indeed.com/jobs?q=software+engineer&l=remote",
+    "expected": "invalid",
+    "tags": ["url", "search-page", "indeed"],
+    "notes": "Indeed search results page — not a direct listing",
+    "added_at": "2026-04-12T00:00:00+00:00"
+  },
+  {
+    "id": "case-004",
+    "input": "https://www.linkedin.com/jobs/search/?keywords=AI+engineer",
+    "expected": "invalid",
+    "tags": ["url", "search-page", "linkedin"],
+    "notes": "LinkedIn search results — not a direct listing",
+    "added_at": "2026-04-12T00:00:00+00:00"
+  },
+  {
+    "id": "case-005",
+    "input": "https://www.linkedin.com/jobs/view/3987654321",
+    "expected": "valid",
+    "tags": ["url", "linkedin"],
+    "notes": "LinkedIn direct job view URL",
+    "added_at": "2026-04-12T00:00:00+00:00"
+  },
+  {
+    "id": "case-006",
+    "input": "https://boards.greenhouse.io/axiomaticai/jobs/4720346101",
+    "expected": "valid",
+    "tags": ["url", "greenhouse"],
+    "notes": "Axiomatic AI Greenhouse URL (applied)",
+    "added_at": "2026-04-12T00:00:00+00:00"
+  },
+  {
+    "id": "case-007",
+    "input": "https://www.glassdoor.com/Jobs/software-engineer-jobs-SRCH_KO0,17.htm",
+    "expected": "invalid",
+    "tags": ["url", "search-page", "glassdoor"],
+    "notes": "Glassdoor search — not a direct listing",
+    "added_at": "2026-04-12T00:00:00+00:00"
+  },
+  {
+    "id": "case-008",
+    "input": "https://apply.workday.com/en-US/companies/cohere/job/Remote/Applied-AI-Engineer_JR-12345",
+    "expected": "valid",
+    "tags": ["url", "workday"],
+    "notes": "Workday direct application URL",
+    "added_at": "2026-04-12T00:00:00+00:00"
+  },
+  {
+    "id": "case-009",
+    "input": "https://www.ziprecruiter.com/jobs-search?search=ML+engineer",
+    "expected": "invalid",
+    "tags": ["url", "search-page", "ziprecruiter"],
+    "notes": "ZipRecruiter search page",
+    "added_at": "2026-04-12T00:00:00+00:00"
+  },
+  {
+    "id": "case-010",
+    "input": "https://jobs.ashbyhq.com/fastino/abc-def-123",
+    "expected": "valid",
+    "tags": ["url", "ashby"],
+    "notes": "Ashby direct job URL",
+    "added_at": "2026-04-12T00:00:00+00:00"
+  }
+]
