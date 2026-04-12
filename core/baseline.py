@@ -111,7 +111,7 @@ def compare(
     ]
 
     baseline_rate = baseline.get("pass_rate", 0.0)
-    delta = run.pass_rate - baseline_rate
+    delta = round(run.pass_rate - baseline_rate, 10)  # avoid float precision noise
 
     return RegressionReport(
         dataset=run.dataset,

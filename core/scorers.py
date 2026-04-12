@@ -74,6 +74,18 @@ class SemanticSimilarity:
         self.threshold = threshold
         self.model = model
 
+    @staticmethod
+    def _check_ollama():
+        import urllib.request as _req
+        try:
+            with _req.urlopen("http://localhost:11434/api/tags", timeout=3):
+                pass
+        except Exception:
+            raise RuntimeError(
+                "Ollama is not running. Start it with: ollama serve\n"
+                "Then pull the model: ollama pull nomic-embed-text"
+            )
+
     def _embed(self, text: str) -> list[float]:
         payload = json.dumps({"model": self.model, "input": text}).encode()
         req = urllib.request.Request(
@@ -97,6 +109,7 @@ class SemanticSimilarity:
 
     def __call__(self, actual: str, expected: str) -> ScorerResult:
         try:
+            self._check_ollama()
             vec_actual = self._embed(actual)
             vec_expected = self._embed(expected)
             sim = self._cosine(vec_actual, vec_expected)
@@ -133,7 +146,20 @@ class LLMJudge:
         self.rubric = rubric
         self.model = model
 
+    @staticmethod
+    def _check_ollama():
+        import urllib.request as _req
+        try:
+            with _req.urlopen("http://localhost:11434/api/tags", timeout=3):
+                pass
+        except Exception:
+            raise RuntimeError(
+                "Ollama is not running. Start it with: ollama serve\n"
+                "Then pull the model: ollama pull llama3.2"
+            )
+
     def __call__(self, actual: str, expected: str) -> ScorerResult:
+        self._check_ollama()
         reference = self.rubric if self.rubric else f"Expected output: {expected}"
         prompt = (
             f"{reference}\n\n"

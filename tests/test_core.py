@@ -275,6 +275,123 @@ class TestRunner:
 
 # ── Baseline ──────────────────────────────────────────────────────────────────
 
+class TestAgentChain:
+    def test_single_step(self):
+        from core.executors import AgentChain
+        chain = AgentChain([PythonFunc(str.upper)])
+        assert chain("hello") == "HELLO"
+
+    def test_multi_step(self):
+        from core.executors import AgentChain
+        chain = AgentChain([
+            PythonFunc(str.upper),
+            PythonFunc(str.strip),
+            PythonFunc(lambda x: f"[{x}]"),
+        ])
+        assert chain("  hello  ") == "[HELLO]"
+
+    def test_stop_on_error(self):
+        from core.executors import AgentChain
+        def boom(x): raise RuntimeError("step failed")
+        chain = AgentChain([PythonFunc(boom)], stop_on_error=True)
+        with pytest.raises(RuntimeError, match="step 0 failed"):
+            chain("input")
+
+    def test_continue_on_error(self):
+        from core.executors import AgentChain
+        def boom(x): raise RuntimeError("step failed")
+        chain = AgentChain([PythonFunc(boom), PythonFunc(str.upper)], stop_on_error=False)
+        # Should not raise, returns whatever survives
+        result = chain("hello")
+        assert isinstance(result, str)
+
+    def test_empty_steps_raises(self):
+        from core.executors import AgentChain
+        with pytest.raises(ValueError):
+            AgentChain([])
+
+
+class TestCLIResolution:
+    """Test the _resolve function in cli.py for executor instantiation."""
+
+    def test_preinstantiated_object(self):
+        import types, sys
+        mod = types.ModuleType("_test_evals")
+        mod.my_exec = PythonFunc(str.upper)
+        sys.modules["_test_evals"] = mod
+
+        from cli import _resolve
+        obj = _resolve("_test_evals:my_exec")
+        assert obj("hello") == "HELLO"
+        del sys.modules["_test_evals"]
+
+    def test_no_arg_class(self):
+        import types, sys
+        class NoArgExecutor:
+            def __call__(self, x): return x.lower()
+        mod = types.ModuleType("_test_noarg")
+        mod.NoArgExecutor = NoArgExecutor
+        sys.modules["_test_noarg"] = mod
+
+        from cli import _resolve
+        obj = _resolve("_test_noarg:NoArgExecutor")
+        assert obj("HELLO") == "hello"
+        del sys.modules["_test_noarg"]
+
+    def test_class_with_required_args_raises_helpful_error(self):
+        import types, sys
+        import typer
+        mod = types.ModuleType("_test_args")
+        mod.PythonFunc = PythonFunc  # requires fn arg
+        sys.modules["_test_args"] = mod
+
+        from cli import _resolve
+        with pytest.raises(typer.BadParameter, match="requires constructor args"):
+            _resolve("_test_args:PythonFunc")
+        del sys.modules["_test_args"]
+
+    def test_missing_module_raises(self):
+        import typer
+        from cli import _resolve
+        with pytest.raises(typer.BadParameter, match="Cannot import module"):
+            _resolve("totally.fake.module:Something")
+
+    def test_missing_attr_raises(self):
+        import typer
+        from cli import _resolve
+        with pytest.raises(typer.BadParameter, match="has no attribute"):
+            _resolve("core.dataset:NonExistent")
+
+
+class TestTagFiltering:
+    def test_filter_by_single_tag(self, tmp_path):
+        ds.add("test", "a", "b", tags=["url"], datasets_dir=tmp_path)
+        ds.add("test", "c", "d", tags=["fit"], datasets_dir=tmp_path)
+        cases = ds.load("test", datasets_dir=tmp_path)
+
+        from cli import _filter_cases
+        filtered = _filter_cases(cases, "url")
+        assert len(filtered) == 1
+        assert filtered[0]["input"] == "a"
+
+    def test_filter_multiple_tags(self, tmp_path):
+        ds.add("test", "a", "b", tags=["url", "greenhouse"], datasets_dir=tmp_path)
+        ds.add("test", "c", "d", tags=["url"], datasets_dir=tmp_path)
+        cases = ds.load("test", datasets_dir=tmp_path)
+
+        from cli import _filter_cases
+        filtered = _filter_cases(cases, "url,greenhouse")
+        assert len(filtered) == 1
+
+    def test_no_filter_returns_all(self, tmp_path):
+        ds.add("test", "a", "b", tags=["url"], datasets_dir=tmp_path)
+        ds.add("test", "c", "d", tags=["fit"], datasets_dir=tmp_path)
+        cases = ds.load("test", datasets_dir=tmp_path)
+
+        from cli import _filter_cases
+        assert len(_filter_cases(cases, "")) == 2
+
+
 class TestBaseline:
     def _make_run(self, passed: int, total: int, dataset: str = "test") -> rn.RunResult:
         cases = []

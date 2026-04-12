@@ -205,3 +205,63 @@ class Prompt:
         with urllib.request.urlopen(req, timeout=self.timeout) as resp:
             data = json.loads(resp.read())
         return data["message"]["content"].strip()
+
+
+# ── AgentChain ────────────────────────────────────────────────────────────────
+
+class AgentChain:
+    """
+    Run a sequence of executors in order. Each executor receives the output
+    of the previous one as its input. The final output is returned.
+
+    Use this to evaluate multi-step agent pipelines end-to-end.
+
+    Example:
+        chain = AgentChain([
+            PythonFunc(parse_jd),          # step 1: parse the JD
+            PythonFunc(score_fit),         # step 2: score fit against profile
+            CLI("python format.py --in {input}"),  # step 3: format output
+        ])
+    """
+
+    def __init__(self, steps: list, stop_on_error: bool = True):
+        """
+        steps: list of executor callables, run in order.
+        stop_on_error: if True, raises on any step error (default True).
+        """
+        if not steps:
+            raise ValueError("AgentChain requires at least one step")
+        self.steps = steps
+        self.stop_on_error = stop_on_error
+
+    def __call__(self, input: Any) -> str:
+        current = input
+        for i, step in enumerate(self.steps):
+            try:
+                current = step(current)
+            except Exception as e:
+                if self.stop_on_error:
+                    raise RuntimeError(f"AgentChain step {i} failed: {e}") from e
+                # continue with whatever current is
+        return str(current) if current is not None else ""
+
+
+# ── Utilities ─────────────────────────────────────────────────────────────────
+
+def check_ollama(host: str = "localhost", port: int = 11434) -> bool:
+    """Return True if Ollama is reachable at host:port."""
+    try:
+        req = urllib.request.Request(f"http://{host}:{port}/api/tags", method="GET")
+        with urllib.request.urlopen(req, timeout=3):
+            return True
+    except Exception:
+        return False
+
+
+def require_ollama(host: str = "localhost", port: int = 11434) -> None:
+    """Raise a clear RuntimeError if Ollama is not reachable."""
+    if not check_ollama(host, port):
+        raise RuntimeError(
+            f"Ollama is not running at {host}:{port}. "
+            f"Start it with: ollama serve"
+        )

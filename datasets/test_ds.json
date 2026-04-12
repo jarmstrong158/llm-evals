@@ -1,0 +1,10 @@
+[
+  {
+    "id": "case-001",
+    "input": "hello",
+    "expected": "world",
+    "tags": [],
+    "notes": "",
+    "added_at": "2026-04-12T20:46:33.467940+00:00"
+  }
+]
